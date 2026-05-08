@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { ShoppingCart, X, MapPin, Clock, Star, ChevronDown, Filter, Search, ArrowRight } from 'lucide-react';
+import './index.css'
 
-const FoodDeliveryApp = () => {
+const App = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [cartOpen, setCartOpen] = useState(false);
   const [cart, setCart] = useState([]);
@@ -880,4 +881,4 @@ const FoodDeliveryApp = () => {
   );
 };
 
-export default FoodDeliveryApp;
+export default App;
