@@ -1,6 +1,19 @@
-import React, { useState, useMemo } from 'react';
-import { ShoppingCart, X, MapPin, Clock, Star, ChevronDown, Filter, Search, ArrowRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ShoppingCart, X, Clock, Star, Search, ArrowRight } from 'lucide-react';
 import './index.css'
+
+// Components
+import { Navbar } from './components/Navbar';
+import { Hero } from './components/Hero';
+import { FilterBar } from './components/FilterBar';
+import { Testimonials } from './components/Testimonials';
+import { About } from './components/About';
+import { Offers } from './components/Offers';
+
+// Data
+import { menuData } from './data/menuData';
+import { offers, freeDeliveryThreshold } from './data/offersData';
+import { restaurantInfo, contactInfo, locationInfo } from './data/restaurantData';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -10,193 +23,134 @@ const App = () => {
   const [customization, setCustomization] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [orderStage, setOrderStage] = useState('menu'); // menu, checkout, payment, confirmation
-  const [selectedPayment, setSelectedPayment] = useState('card');
+  const [selectedPayment, setSelectedPayment] = useState('esewa');
   const [customerInfo, setCustomerInfo] = useState({ name: '', address: '', phone: '' });
+  const [orderId, setOrderId] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [filters, setFilters] = useState({
+    dietType: null,
+    sortBy: 'newest',
+    maxPrice: 1000,
+    minRating: 0,
+    maxPrepTime: 60,
+  });
+  const [showReservationModal, setShowReservationModal] = useState(false);
+  const [reservation, setReservation] = useState({
+    name: '',
+    guests: 2,
+    date: '',
+    time: '',
+    phone: '',
+    specialRequest: '',
+  });
 
   // Mock food data with detailed information
-  const foodItems = [
-    {
-      id: 1,
-      name: 'Margherita Pizza',
-      category: 'pizza',
-      type: 'veg',
-      price: 399,
-      rating: 4.5,
-      reviews: 128,
-      image: '🍕',
-      description: 'Classic pizza with fresh mozzarella, basil, and tomato sauce',
-      ingredients: ['Tomato Sauce', 'Mozzarella Cheese', 'Basil', 'Olive Oil', 'Dough'],
-      prepTime: 20,
-      calories: 285,
-      customizable: ['Cheese', 'Sauce Level', 'Crust Type']
-    },
-    {
-      id: 2,
-      name: 'Grilled Chicken Tikka',
-      category: 'mains',
-      type: 'non-veg',
-      price: 449,
-      rating: 4.7,
-      reviews: 245,
-      image: '🍗',
-      description: 'Succulent chicken marinated in yogurt and spices, grilled to perfection',
-      ingredients: ['Chicken Breast', 'Yogurt', 'Ginger-Garlic Paste', 'Spices', 'Lemon Juice'],
-      prepTime: 25,
-      calories: 320,
-      customizable: ['Spice Level', 'Portion Size', 'Sauce']
-    },
-    {
-      id: 3,
-      name: 'Paneer Butter Masala',
-      category: 'mains',
-      type: 'veg',
-      price: 379,
-      rating: 4.6,
-      reviews: 189,
-      image: '🧀',
-      description: 'Soft cottage cheese cubes in a creamy tomato and butter sauce',
-      ingredients: ['Paneer', 'Butter', 'Cream', 'Tomato Puree', 'Spices'],
-      prepTime: 20,
-      calories: 380,
-      customizable: ['Spice Level', 'Gravy Thickness', 'Cheese Amount']
-    },
-    {
-      id: 4,
-      name: 'Tandoori Salmon',
-      category: 'mains',
-      type: 'non-veg',
-      price: 649,
-      rating: 4.8,
-      reviews: 156,
-      image: '🐟',
-      description: 'Premium salmon fillet marinated in tandoori spices and grilled',
-      ingredients: ['Salmon Fillet', 'Tandoori Masala', 'Yogurt', 'Lemon', 'Herbs'],
-      prepTime: 30,
-      calories: 420,
-      customizable: ['Cooking Level', 'Side Dish', 'Sauce']
-    },
-    {
-      id: 5,
-      name: 'Vegetable Biryani',
-      category: 'rice',
-      type: 'veg',
-      price: 329,
-      rating: 4.4,
-      reviews: 201,
-      image: '🍚',
-      description: 'Fragrant basmati rice cooked with vegetables and aromatic spices',
-      ingredients: ['Basmati Rice', 'Mixed Vegetables', 'Yogurt', 'Spices', 'Herbs'],
-      prepTime: 25,
-      calories: 350,
-      customizable: ['Spice Level', 'Extra Vegetables', 'Portion Size']
-    },
-    {
-      id: 6,
-      name: 'Mutton Biryani',
-      category: 'rice',
-      type: 'non-veg',
-      price: 449,
-      rating: 4.7,
-      reviews: 267,
-      image: '🍛',
-      description: 'Tender mutton pieces with basmati rice and traditional dum-cooked preparation',
-      ingredients: ['Mutton', 'Basmati Rice', 'Yogurt', 'Spices', 'Mint'],
-      prepTime: 35,
-      calories: 420,
-      customizable: ['Spice Level', 'Meat Tenderness', 'Rice Type']
-    },
-    {
-      id: 7,
-      name: 'Caesar Salad',
-      category: 'salads',
-      type: 'veg',
-      price: 259,
-      rating: 4.3,
-      reviews: 98,
-      image: '🥗',
-      description: 'Crisp romaine lettuce with parmesan, croutons, and Caesar dressing',
-      ingredients: ['Romaine Lettuce', 'Parmesan', 'Croutons', 'Caesar Dressing', 'Lemon'],
-      prepTime: 10,
-      calories: 210,
-      customizable: ['Dressing Amount', 'Extra Vegetables', 'Protein Addition']
-    },
-    {
-      id: 8,
-      name: 'Grilled Fish Salad',
-      category: 'salads',
-      type: 'non-veg',
-      price: 389,
-      rating: 4.6,
-      reviews: 134,
-      image: '🥙',
-      description: 'Mixed greens with grilled fish, avocado, and lemon vinaigrette',
-      ingredients: ['Mixed Greens', 'Grilled Fish', 'Avocado', 'Lemon Vinaigrette', 'Cherry Tomatoes'],
-      prepTime: 15,
-      calories: 280,
-      customizable: ['Fish Type', 'Dressing', 'Extra Vegetables']
-    },
-    {
-      id: 9,
-      name: 'Chocolate Lava Cake',
-      category: 'desserts',
-      type: 'veg',
-      price: 199,
-      rating: 4.9,
-      reviews: 412,
-      image: '🍰',
-      description: 'Decadent chocolate cake with a molten center, served with vanilla ice cream',
-      ingredients: ['Dark Chocolate', 'Butter', 'Eggs', 'Flour', 'Vanilla Ice Cream'],
-      prepTime: 12,
-      calories: 450,
-      customizable: ['Ice Cream Flavor', 'Chocolate Type', 'Serving Temperature']
-    },
-    {
-      id: 10,
-      name: 'Mango Cheesecake',
-      category: 'desserts',
-      type: 'veg',
-      price: 229,
-      rating: 4.8,
-      reviews: 289,
-      image: '🧁',
-      description: 'Creamy cheesecake infused with fresh mango puree and graham cracker crust',
-      ingredients: ['Cream Cheese', 'Mango Puree', 'Graham Crackers', 'Sugar', 'Gelatin'],
-      prepTime: 10,
-      calories: 380,
-      customizable: ['Mango Amount', 'Crust Type', 'Topping']
-    },
-  ];
+  const foodItems = useMemo(() => menuData, []);
 
   const categories = [
     { id: 'all', name: 'All Dishes', icon: '🍽️' },
-    { id: 'pizza', name: 'Pizza', icon: '🍕' },
-    { id: 'mains', name: 'Mains', icon: '🍗' },
-    { id: 'rice', name: 'Rice Dishes', icon: '🍚' },
-    { id: 'salads', name: 'Salads', icon: '🥗' },
+    { id: 'nepali', name: 'Nepali', icon: '🇳🇵' },
+    { id: 'tharu', name: 'Tharu Food', icon: '🥘' },
+    { id: 'bbq', name: 'BBQ & Sekuwa', icon: '🔥' },
+    { id: 'pizza', name: 'Firewood Pizza', icon: '🍕' },
+    { id: 'momo', name: 'Mo:Mo', icon: '🥟' },
+    { id: 'coffee', name: 'Coffee', icon: '☕' },
     { id: 'desserts', name: 'Desserts', icon: '🍰' },
   ];
 
   const paymentMethods = [
-    { id: 'card', name: 'Credit/Debit Card', icon: '💳' },
-    { id: 'wallet', name: 'Digital Wallet', icon: '📱' },
-    { id: 'upi', name: 'UPI', icon: '💰' },
-    { id: 'netbanking', name: 'Net Banking', icon: '🏦' },
+    { id: 'esewa', name: 'eSewa', icon: '📱' },
+    { id: 'khalti', name: 'Khalti', icon: '💳' },
+    { id: 'imepayme', name: 'IME Pay', icon: '💰' },
+    { id: 'connectips', name: 'ConnectIPS', icon: '🏦' },
+    { id: 'card', name: 'Card', icon: '💳' },
     { id: 'cod', name: 'Cash on Delivery', icon: '💵' },
   ];
-
-  // Filter dishes based on category, diet type, and search
-  const filteredDishes = useMemo(() => {
-    return foodItems.filter(dish => {
-      const matchesCategory = activeTab === 'all' || dish.category === activeTab;
-      const matchesSearch = dish.name.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-  }, [activeTab, searchTerm]);
 
   // Calculate cart totals
   const cartTotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   }, [cart]);
+
+  // Filter dishes based on category, diet type, and search with advanced filters
+  const filteredDishes = useMemo(() => {
+    let result = foodItems.filter(dish => {
+      const matchesCategory = activeTab === 'all' || dish.category === activeTab;
+      const matchesSearch = dish.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDiet = !filters.dietType || dish.type === filters.dietType;
+      const matchesPrice = dish.price <= filters.maxPrice;
+      const matchesRating = dish.rating >= filters.minRating;
+      const matchesPrepTime = dish.prepTime <= filters.maxPrepTime;
+      
+      return matchesCategory && matchesSearch && matchesDiet && matchesPrice && matchesRating && matchesPrepTime;
+    });
+
+    // Apply sorting
+    if (filters.sortBy === 'rating') {
+      result.sort((a, b) => b.rating - a.rating);
+    } else if (filters.sortBy === 'priceLow') {
+      result.sort((a, b) => a.price - b.price);
+    } else if (filters.sortBy === 'priceHigh') {
+      result.sort((a, b) => b.price - a.price);
+    } else if (filters.sortBy === 'popular') {
+      result.sort((a, b) => b.reviews - a.reviews);
+    }
+
+    return result;
+  }, [activeTab, searchTerm, filters, foodItems]);
+
+  // Calculate discount based on applied coupon
+  const getDiscountAmount = () => {
+    if (!appliedCoupon) return 0;
+    const coupon = offers.find(o => o.code === appliedCoupon);
+    if (!coupon || cartTotal < coupon.minOrder) return 0;
+    
+    if (coupon.type === 'percentage') {
+      return Math.min(Math.round(cartTotal * coupon.discount / 100), coupon.maxDiscount);
+    } else if (coupon.type === 'flat') {
+      return coupon.discount;
+    } else if (coupon.type === 'delivery') {
+      return coupon.discount;
+    }
+    return 0;
+  };
+
+  const discountAmount = useMemo(() => getDiscountAmount(), [appliedCoupon, cartTotal]);
+  const deliveryCharge = cartTotal >= freeDeliveryThreshold ? 0 : 50;
+  const finalTotal = cartTotal + Math.round(cartTotal * 0.05) + deliveryCharge - discountAmount;
+
+  const handleApplyCoupon = (code) => {
+    const coupon = offers.find(o => o.code === code);
+    if (coupon && cartTotal >= coupon.minOrder) {
+      setAppliedCoupon(code);
+      alert(`✅ Coupon ${code} applied! Saving ₹${getDiscountAmount()}`);
+    } else {
+      alert(`❌ Coupon not applicable. Minimum order: ₹${coupon?.minOrder || 0}`);
+    }
+  };
+
+  const handleFilterChange = (filterName, value) => {
+    setFilters(prev => ({ ...prev, [filterName]: value }));
+  };
+
+  const handleReservation = () => {
+    if (reservation.name && reservation.date && reservation.time && reservation.phone) {
+      alert(`✅ Reservation confirmed for ${reservation.guests} guests on ${reservation.date} at ${reservation.time}`);
+      setShowReservationModal(false);
+      setReservation({ name: '', guests: 2, date: '', time: '', phone: '', specialRequest: '' });
+    } else {
+      alert('❌ Please fill all required fields');
+    }
+  };
+
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    } else if (sectionId === 'menu') {
+      setOrderStage('menu');
+    }
+  };
 
   const addToCart = (dish) => {
     const existingItem = cart.find(item => item.id === dish.id);
@@ -251,116 +205,208 @@ const App = () => {
   };
 
   const processPayment = () => {
+    setOrderId(Math.random().toString(36).substr(2, 9).toUpperCase());
     setOrderStage('confirmation');
   };
 
   // Rendering functions
   const renderMenu = () => (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 opacity-10"></div>
-        <div className="relative px-6 py-12">
-          <h1 className="text-5xl font-black mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            FoodHub
-          </h1>
-          <p className="text-gray-600 text-lg">Order from the best restaurants in your area</p>
-        </div>
-      </div>
+    <div className="space-y-0">
+      {/* Hero Section */}
+      <Hero 
+        onOrderClick={() => document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth' })}
+        onReservationClick={() => setShowReservationModal(true)}
+      />
+
+      {/* Filter Bar */}
+      <FilterBar
+        activeCategory={activeTab}
+        onCategoryChange={setActiveTab}
+        onFilterChange={handleFilterChange}
+        categories={categories}
+        filters={filters}
+      />
 
       {/* Search Bar */}
-      <div className="px-6">
-        <div className="relative">
-          <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="max-w-7xl mx-auto relative">
+          <Search className="absolute left-6 top-3.5 text-gray-400" size={20} />
           <input
             type="text"
             placeholder="Search dishes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition"
+            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition"
             style={{ fontFamily: "'Segoe UI', sans-serif" }}
           />
         </div>
       </div>
 
-      {/* Category Filter */}
-      <div className="px-6">
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveTab(cat.id)}
-              className={`px-5 py-3 rounded-full font-semibold whitespace-nowrap transition-all transform hover:scale-105 ${
-                activeTab === cat.id
-                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              style={{ fontFamily: "'Segoe UI', sans-serif" }}
-            >
-              <span className="mr-2">{cat.icon}</span>{cat.name}
-            </button>
-          ))}
+      {/* Dishes Grid */}
+      <div className="bg-white px-6 py-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredDishes.map(dish => (
+              <div
+                key={dish.id}
+                className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all transform hover:scale-102 border border-gray-100 cursor-pointer"
+                onClick={() => openDishModal(dish)}
+              >
+                {/* Image Section */}
+                <div className="relative bg-gradient-to-br from-red-100 to-orange-100 h-48 flex items-center justify-center overflow-hidden">
+                  <div className="text-8xl group-hover:scale-125 transition-transform duration-300">
+                    {dish.image}
+                  </div>
+                  
+                  {/* Badges */}
+                  <div className="absolute top-3 right-3 flex gap-2">
+                    <div className="bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-orange-600">
+                      {dish.type === 'veg' ? '🌱 Veg' : '🍖 Non-Veg'}
+                    </div>
+                    {dish.isBestSeller && (
+                      <div className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                        ⭐ Best Seller
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Content Section */}
+                <div className="p-4 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-bold text-gray-900 text-lg" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                      {dish.name}
+                    </h3>
+                  </div>
+
+                  <p className="text-gray-600 text-sm line-clamp-2">{dish.description}</p>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-1">
+                      <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                      <span className="font-semibold text-gray-900">{dish.rating}</span>
+                      <span className="text-gray-500 text-xs">({dish.reviews})</span>
+                    </div>
+                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                      <Clock size={14} />
+                      {dish.prepTime}m
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <span className="text-2xl font-black text-red-600">₹{dish.price}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDishModal(dish);
+                      }}
+                      className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors"
+                    >
+                      <ShoppingCart size={20} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredDishes.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-600">No dishes found matching your criteria.</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Dishes Grid */}
-      <div className="px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDishes.map(dish => (
-            <div
-              key={dish.id}
-              className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all transform hover:scale-102 border border-gray-100 cursor-pointer"
-              onClick={() => openDishModal(dish)}
-            >
-              {/* Image Section */}
-              <div className="relative bg-gradient-to-br from-orange-100 to-pink-100 h-48 flex items-center justify-center overflow-hidden">
-                <div className="text-8xl group-hover:scale-125 transition-transform duration-300">
-                  {dish.image}
-                </div>
-                <div className="absolute top-3 right-3 bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-orange-600">
-                  {dish.type === 'veg' ? '🌱 Veg' : '🍖 Non-Veg'}
-                </div>
+      {/* Offers Section */}
+      <Offers onApplyCoupon={handleApplyCoupon} />
+
+      {/* About Section */}
+      <About />
+
+      {/* Testimonials Section */}
+      <Testimonials />
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Company Info */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-3xl">🦏</span>
+                <h3 className="text-2xl font-black text-red-500">{restaurantInfo.name.split(' ')[0]}</h3>
               </div>
-
-              {/* Content Section */}
-              <div className="p-4 space-y-2">
-                <div className="flex items-start justify-between">
-                  <h3 className="font-bold text-gray-900 text-lg" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                    {dish.name}
-                  </h3>
-                </div>
-
-                <p className="text-gray-600 text-sm line-clamp-2">{dish.description}</p>
-
-                <div className="flex items-center justify-between pt-2">
-                  <div className="flex items-center gap-1">
-                    <Star size={16} className="text-yellow-500 fill-yellow-500" />
-                    <span className="font-semibold text-gray-900">{dish.rating}</span>
-                    <span className="text-gray-500 text-xs">({dish.reviews})</span>
-                  </div>
-                  <div className="text-xs text-gray-500 flex items-center gap-1">
-                    <Clock size={14} />
-                    {dish.prepTime}m
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                  <span className="text-2xl font-black text-orange-600">₹{dish.price}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDishModal(dish);
-                    }}
-                    className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg transition-colors"
-                  >
-                    <ShoppingCart size={20} />
-                  </button>
-                </div>
+              <p className="text-gray-300 leading-relaxed text-sm">
+                {restaurantInfo.tagline}
+              </p>
+              <div className="flex space-x-4">
+                <a href={contactInfo.socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-500 transition-colors">
+                  <span className="text-2xl">📘</span>
+                </a>
+                <a href={contactInfo.socialMedia.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-500 transition-colors">
+                  <span className="text-2xl">📷</span>
+                </a>
+                <a href={contactInfo.socialMedia.tiktok} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-500 transition-colors">
+                  <span className="text-2xl">🎵</span>
+                </a>
               </div>
             </div>
-          ))}
+
+            {/* Quick Links */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-bold text-red-500">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><a href="#home" className="text-gray-300 hover:text-white transition-colors">Home</a></li>
+                <li><a href="#menu" className="text-gray-300 hover:text-white transition-colors">Menu</a></li>
+                <li><a href="#about" className="text-gray-300 hover:text-white transition-colors">About</a></li>
+                <li><a href="#offers" className="text-gray-300 hover:text-white transition-colors">Offers</a></li>
+              </ul>
+            </div>
+
+            {/* Customer Service */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-bold text-red-500">Contact</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="text-gray-300">📞 {contactInfo.phone}</li>
+                <li className="text-gray-300">✉️ {contactInfo.email}</li>
+                <li className="text-gray-300">📍 {locationInfo.city}, {locationInfo.district}</li>
+                <li><a href={contactInfo.whatsapp} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white">💬 WhatsApp</a></li>
+              </ul>
+            </div>
+
+            {/* Newsletter */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-bold text-red-500">Stay Updated</h4>
+              <p className="text-gray-300 text-sm">Subscribe for latest offers</p>
+              <div className="flex">
+                <input
+                  type="email"
+                  placeholder="Your email"
+                  className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-lg focus:outline-none focus:border-red-500 text-white placeholder-gray-400 text-sm"
+                />
+                <button className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-r-lg font-semibold transition-colors">
+                  →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-800 mt-12 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 text-sm">
+              <div className="text-gray-400">
+                © 2026 {restaurantInfo.name}. All rights reserved.
+              </div>
+              <div className="flex space-x-6 text-gray-400">
+                <a href="#" className="hover:text-white transition-colors">Privacy</a>
+                <a href="#" className="hover:text-white transition-colors">Terms</a>
+                <a href="#" className="hover:text-white transition-colors">Contact</a>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 
@@ -431,7 +477,7 @@ const App = () => {
                     <select
                       value={customization[option] || ''}
                       onChange={(e) => setCustomization({ ...customization, [option]: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-orange-500"
+                      className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-red-600"
                     >
                       <option value="">Select {option}</option>
                       {option === 'Spice Level' && (
@@ -565,37 +611,70 @@ const App = () => {
         </div>
       </div>
 
+      {/* Coupon Code Input */}
+      <div className="mb-8">
+        <h3 className="text-2xl font-bold mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          Apply Coupon
+        </h3>
+        <div className="bg-white rounded-2xl p-6 shadow-md flex gap-4">
+          <input
+            type="text"
+            placeholder="Enter coupon code (e.g., RHINO10)"
+            value={appliedCoupon || ''}
+            onChange={(e) => setAppliedCoupon(e.target.value.toUpperCase())}
+            className="flex-1 p-3 border-2 border-gray-200 rounded-lg focus:border-red-600 focus:outline-none"
+          />
+          <button
+            onClick={() => appliedCoupon && handleApplyCoupon(appliedCoupon)}
+            className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white font-bold rounded-lg transition-all"
+          >
+            Apply
+          </button>
+        </div>
+        {appliedCoupon && (
+          <p className="text-green-600 font-semibold mt-2">✅ Coupon {appliedCoupon} applied! Saving ₹{discountAmount}</p>
+        )}
+      </div>
+
       {/* Order Summary */}
-      <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl p-6 space-y-3 mb-8">
+      <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-6 space-y-3">
         <div className="flex justify-between font-semibold text-lg">
           <span>Subtotal</span>
           <span>₹{cartTotal}</span>
         </div>
         <div className="flex justify-between font-semibold text-lg">
           <span>Delivery Fee</span>
-          <span className="text-green-600">Free</span>
+          <span className={deliveryCharge === 0 ? 'text-green-600' : ''}>
+            {deliveryCharge === 0 ? 'Free' : `₹${deliveryCharge}`}
+          </span>
         </div>
         <div className="flex justify-between font-semibold text-lg">
-          <span>Tax</span>
+          <span>Tax (5%)</span>
           <span>₹{Math.round(cartTotal * 0.05)}</span>
         </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between font-semibold text-lg text-green-600 border-t-2 border-green-300 pt-2">
+            <span>💰 Discount ({appliedCoupon})</span>
+            <span>-₹{discountAmount}</span>
+          </div>
+        )}
         <div className="border-t-2 border-gray-300 pt-3 flex justify-between text-2xl font-black">
           <span>Total</span>
-          <span className="text-orange-600">₹{cartTotal + Math.round(cartTotal * 0.05)}</span>
+          <span className="text-red-600">₹{finalTotal}</span>
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="flex gap-4">
         <button
-          onClick={() => setOrderStage('menu')}
+          onClick={() => setOrderStage('checkout')}
           className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-bold py-4 rounded-xl transition text-lg"
         >
-          Continue Shopping
+          Back
         </button>
         <button
           onClick={proceedToPayment}
-          className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 rounded-xl transition text-lg flex items-center justify-center gap-2"
+          className="flex-1 bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white font-bold py-4 rounded-xl transition text-lg flex items-center justify-center gap-2"
         >
           Proceed to Payment <ArrowRight size={20} />
         </button>
@@ -609,7 +688,7 @@ const App = () => {
         Payment Method
       </h2>
 
-      {/* Order Summary */}
+      {/* Payment Summary */}
       <div className="bg-white rounded-2xl p-6 shadow-md mb-8">
         <h3 className="font-bold text-lg mb-4">Order Summary</h3>
         <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
@@ -626,12 +705,22 @@ const App = () => {
             <span>₹{cartTotal}</span>
           </div>
           <div className="flex justify-between font-semibold">
+            <span>Delivery</span>
+            <span>{deliveryCharge === 0 ? 'Free' : `₹${deliveryCharge}`}</span>
+          </div>
+          <div className="flex justify-between font-semibold">
             <span>Tax (5%)</span>
             <span>₹{Math.round(cartTotal * 0.05)}</span>
           </div>
-          <div className="flex justify-between text-xl font-black text-orange-600 pt-2 border-t">
+          {discountAmount > 0 && (
+            <div className="flex justify-between font-semibold text-green-600">
+              <span>Discount</span>
+              <span>-₹{discountAmount}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-xl font-black text-red-600 pt-2 border-t">
             <span>Total Amount</span>
-            <span>₹{cartTotal + Math.round(cartTotal * 0.05)}</span>
+            <span>₹{finalTotal}</span>
           </div>
         </div>
       </div>
@@ -655,7 +744,7 @@ const App = () => {
               <div
                 className={`p-6 rounded-2xl border-2 transition-all transform hover:scale-105 ${
                   selectedPayment === method.id
-                    ? 'border-orange-500 bg-orange-50 shadow-lg'
+                    ? 'border-red-600 bg-red-50 shadow-lg'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
@@ -663,9 +752,10 @@ const App = () => {
                 <h4 className="font-bold text-lg">{method.name}</h4>
                 <p className="text-gray-600 text-sm mt-1">
                   {method.id === 'card' && 'Visa, Mastercard, American Express'}
-                  {method.id === 'wallet' && 'Apple Pay, Google Pay, Samsung Pay'}
-                  {method.id === 'upi' && 'Google Pay, PhonePe, BHIM'}
-                  {method.id === 'netbanking' && 'All major banks supported'}
+                  {method.id === 'esewa' && 'Fast & Secure payment'}
+                  {method.id === 'khalti' && 'Popular mobile wallet'}
+                  {method.id === 'imepayme' && 'Universal payment'}
+                  {method.id === 'connectips' && 'Bank partner'}
                   {method.id === 'cod' && 'Pay when food arrives'}
                 </p>
               </div>
@@ -698,7 +788,7 @@ const App = () => {
           onClick={processPayment}
           className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 rounded-xl transition text-lg flex items-center justify-center gap-2"
         >
-          Pay ₹{cartTotal + Math.round(cartTotal * 0.05)}
+          Pay ₹{finalTotal}
         </button>
       </div>
     </div>
@@ -716,26 +806,32 @@ const App = () => {
         </p>
       </div>
 
-      <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-3xl p-8 mb-8 space-y-6">
+      <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-3xl p-8 mb-8 space-y-6">
         <div>
           <p className="text-gray-600 text-sm mb-1">Order ID</p>
-          <p className="text-3xl font-black text-orange-600">#{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+          <p className="text-3xl font-black text-red-600">#{orderId}</p>
         </div>
 
-        <div className="border-t-2 border-orange-200 pt-6">
+        <div className="border-t-2 border-red-200 pt-6">
           <p className="text-gray-600 text-sm mb-3">Estimated Delivery Time</p>
           <p className="text-2xl font-bold">30-40 minutes</p>
         </div>
 
-        <div className="border-t-2 border-orange-200 pt-6">
+        <div className="border-t-2 border-red-200 pt-6">
           <p className="text-gray-600 text-sm mb-3">Total Amount Paid</p>
-          <p className="text-3xl font-black text-green-600">₹{cartTotal + Math.round(cartTotal * 0.05)}</p>
+          <p className="text-3xl font-black text-green-600">₹{finalTotal}</p>
         </div>
 
-        <div className="border-t-2 border-orange-200 pt-6">
+        <div className="border-t-2 border-red-200 pt-6">
           <p className="text-gray-600 text-sm mb-3">Delivery to</p>
           <p className="font-semibold">{customerInfo.name}</p>
           <p className="text-gray-700">{customerInfo.address}</p>
+          <p className="text-gray-600 text-sm">📞 {customerInfo.phone}</p>
+        </div>
+
+        <div className="border-t-2 border-red-200 pt-6">
+          <p className="text-gray-600 text-sm mb-2">Estimated Delivery</p>
+          <p className="text-2xl font-bold">🚚 30-40 minutes</p>
         </div>
       </div>
 
@@ -747,8 +843,9 @@ const App = () => {
             setOrderStage('menu');
             setSearchTerm('');
             setActiveTab('all');
+            setAppliedCoupon(null);
           }}
-          className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 rounded-xl transition text-lg"
+          className="w-full bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white font-bold py-4 rounded-xl transition text-lg"
         >
           Order More Food
         </button>
@@ -763,36 +860,100 @@ const App = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
-      {/* Fixed Header */}
-      <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-gray-200 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-black text-orange-600" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            🍽️ FoodHub
-          </h1>
-          {orderStage === 'menu' && (
-            <button
-              onClick={() => setCartOpen(!cartOpen)}
-              className="relative p-3 hover:bg-gray-100 rounded-lg transition"
-            >
-              <ShoppingCart size={24} className="text-orange-600" />
-              {cart.length > 0 && (
-                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                  {cart.length}
-                </span>
-              )}
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Navbar */}
+      <Navbar
+        cartLength={cart.length}
+        onCartClick={() => setCartOpen(!cartOpen)}
+        scrollToSection={scrollToSection}
+      />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto">
+      <div>
         {orderStage === 'menu' && renderMenu()}
         {orderStage === 'checkout' && renderCheckout()}
         {orderStage === 'payment' && renderPayment()}
         {orderStage === 'confirmation' && renderConfirmation()}
       </div>
+
+      {/* Reservation Modal */}
+      {showReservationModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                📅 Book a Table
+              </h2>
+              <button
+                onClick={() => setShowReservationModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Your Name"
+                value={reservation.name}
+                onChange={(e) => setReservation({ ...reservation, name: e.target.value })}
+                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-red-600 focus:outline-none"
+              />
+              <select
+                value={reservation.guests}
+                onChange={(e) => setReservation({ ...reservation, guests: parseInt(e.target.value) })}
+                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-red-600 focus:outline-none"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                  <option key={num} value={num}>{num} {num === 1 ? 'Guest' : 'Guests'}</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={reservation.date}
+                onChange={(e) => setReservation({ ...reservation, date: e.target.value })}
+                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-red-600 focus:outline-none"
+              />
+              <input
+                type="time"
+                value={reservation.time}
+                onChange={(e) => setReservation({ ...reservation, time: e.target.value })}
+                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-red-600 focus:outline-none"
+              />
+              <input
+                type="tel"
+                placeholder="Phone Number"
+                value={reservation.phone}
+                onChange={(e) => setReservation({ ...reservation, phone: e.target.value })}
+                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-red-600 focus:outline-none"
+              />
+              <textarea
+                placeholder="Special Requests"
+                value={reservation.specialRequest}
+                onChange={(e) => setReservation({ ...reservation, specialRequest: e.target.value })}
+                rows="3"
+                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-red-600 focus:outline-none"
+              ></textarea>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={() => setShowReservationModal(false)}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 font-bold rounded-lg hover:border-gray-400 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReservation}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white font-bold rounded-lg transition"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Cart Sidebar */}
       {orderStage === 'menu' && cartOpen && (
@@ -831,7 +992,7 @@ const App = () => {
                       <span className="w-6 text-center font-bold">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="bg-orange-500 text-white w-8 h-8 rounded font-bold"
+                        className="bg-red-600 text-white w-8 h-8 rounded font-bold"
                       >
                         +
                       </button>
@@ -854,18 +1015,18 @@ const App = () => {
                 </div>
                 <div className="flex justify-between font-semibold text-green-600">
                   <span>Delivery</span>
-                  <span>Free</span>
+                  <span>{deliveryCharge === 0 ? 'Free' : `₹${deliveryCharge}`}</span>
                 </div>
-                <div className="flex justify-between text-xl font-black text-orange-600 pt-3 border-t">
+                <div className="flex justify-between text-xl font-black text-red-600 pt-3 border-t">
                   <span>Total</span>
-                  <span>₹{cartTotal + Math.round(cartTotal * 0.05)}</span>
+                  <span>₹{cartTotal + Math.round(cartTotal * 0.05) + deliveryCharge}</span>
                 </div>
                 <button
                   onClick={() => {
                     setCartOpen(false);
                     proceedToCheckout();
                   }}
-                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-3 rounded-xl hover:from-orange-600 hover:to-red-600 transition"
+                  className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition"
                 >
                   Checkout
                 </button>
